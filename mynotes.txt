@@ -105,7 +105,7 @@ cpf_reconfigure_date_v2.py
 docker build -t antscrawlingjay/cpf-simulator .
 docker run -p 8501:8501 antscrawlingjay/cpf-simulator
 
-streamlit run main_v5.py --server.headless true
+streamlit run src/main.py --server.headless true
 
 
 uv create -n newcpf_program -f environment.yml
