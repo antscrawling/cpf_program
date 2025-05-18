@@ -1,5 +1,5 @@
 
-# newcpf_program
+# cpf_program
 New CPF program that calculates Singapore retirement funds.
 
 ## Installation Steps
