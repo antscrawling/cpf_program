@@ -219,14 +219,18 @@ def login_page() -> bool:
                     "secret_answer": hash_password(secret_answer.lower())
                 }
                 save_users(users)
-                st.success("Account created successfully! Please log in.")
+                #st.success("Account created successfully! Please log in.")
                 # Exit registration mode and refresh to login
                 st.session_state["register_mode"] = False
+                #st.rerun()
+                st.success("Account created successfully! Please log in.")
+                st.success("Account created successfully! Please log in.")
                 st.rerun()
         if cancel_btn:
             # Cancel registration and return to login mode
             st.session_state["register_mode"] = False
             st.rerun()
+            
         return False  # End the login_page function here (in register mode)
 
     # Login form section
