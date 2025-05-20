@@ -1,4 +1,3 @@
-src/cpf_simulation.db
 .DS_Store
 cpf_program.egg-info/dependency_links.txt
 cpf_program.egg-info/PKG-INFO
@@ -6,3 +5,4 @@ cpf_program.egg-info/PKG-INFO
 cpf_program.egg-info/requires.txt
 cpf_program.egg-info/SOURCES.txt
 cpf_program.egg-info/top_level.txt
+.gitignore
