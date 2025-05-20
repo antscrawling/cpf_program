@@ -1,4 +1,4 @@
-# from cpf_cpf.config_v11 import CPFConfig
+#from cpf_cpf.config_v11 import CPFConfig
 import os
 import sqlite3
 from datetime import datetime
@@ -10,9 +10,7 @@ from cpf_date_generator_v3 import DateGenerator
 from cpf_program_v12 import CPFAccount
 
 # Dynamically determine the src directory
-SRC_DIR = os.path.dirname(
-    os.path.abspath(__file__)
-)  # Path to the src directory  # noqa: PTH100, PTH120
+SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Path to the src directory  # noqa: PTH100, PTH120
 CONFIG_FILENAME = os.path.join(  # noqa: PTH118
     SRC_DIR, "cpf_config.json"
 )  # Full path to the config file
@@ -83,7 +81,7 @@ def compute_age(startdate: datetime.date, birthdate: datetime.date) -> int:
 def main():
     with CPFAccount() as cpf:
         # Step 1: Load the configuration
-        # cpf.config = CPFConfig(CONFIG_FILENAME)
+        #cpf.config = CPFConfig(CONFIG_FILENAME)
         startdate = cpf.config.startdate
         enddate = cpf.config.enddate
         birthdate = cpf.config.birthdate
@@ -118,7 +116,7 @@ def main():
         is_initial = True
         is_display_special_july = False
         # Step 4: Calculate CPF per month using CPFAccount
-
+        
         # Step 5  Set the initial values
         cpf.startdate = cpf.convert_date_strings(key="startdate", date_str=startdate)
         cpf.enddate = cpf.convert_date_strings(key="enddate", date_str=enddate)
@@ -204,8 +202,8 @@ def main():
                 colour="blue",
             ):
                 # Step 12: Update the current date and age
-                cpf.dbreference = next(cpf.transaction_reference_gen)
-                # )  # this is a unique reference for logging.
+                cpf.dbreference= next(cpf.transaction_reference_gen)
+              # )  # this is a unique reference for logging.
                 cpf.date_key = date_key
                 cpf.current_date = date_dict[date_key][
                     "period_end"

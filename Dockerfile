@@ -21,10 +21,10 @@ COPY src/ /app/
 # Set up Streamlit config and secrets
 RUN mkdir -p /root/.streamlit
 COPY config.toml /root/.streamlit/config.toml
-COPY secrets.toml /root/.streamlit/secrets.toml
+#COPY secrets.toml /root/.streamlit/secrets.toml
 
 # Expose the Streamlit port
 EXPOSE 8501
 
 # Run the Streamlit app
-CMD ["streamlit", "run", "src/main.py", "--server.port=8501", "--server.enableCORS=false", "--server.enableXsrfProtection=false"]
+CMD ["streamlit", "run", "main.py", "--server.port=8501", "--server.enableCORS=false", "--server.enableXsrfProtection=false"]

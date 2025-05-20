@@ -1,26 +1,30 @@
 import atexit
-from datetime import datetime
 import csv
-import json
-from cpf_config_loader_v11 import CPFConfig
-from cpf_data_saver_v3 import DataSaver  # Import DataSaver class
-from multiprocessing import Process, Queue
-import sqlite3
 import os
+import sqlite3
+from collections.abc import Generator
 from datetime import date, datetime
-from itertools import count
+from multiprocessing import Process, Queue, freeze_support
+
+from cpf_config_loader_v11 import CPFConfig
 
 # Dynamically determine the src directory
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Path to the src directory
-CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')  # Full path to the config file
+CONFIG_FILENAME = os.path.join(SRC_DIR, "cpf_config.json")  # Full path to the config file
 LOG_FILE_PATH = os.path.join(SRC_DIR, "cpf_log_file.csv")  # Log file path inside src folder
-DATE_KEYS = ['startdate', 'enddate', 'birthdate']
+DATE_KEYS = ["startdate", "enddate", "birthdate"]
 DATE_FORMAT = "%Y-%m-%d"
 
 # Load configuration
 #config = ConfigLoader(CONFIG_FILENAME)
 
-
+def cumulative_generator() -> Generator[int, None, None]:
+    """Generator that yields cumulative sums of integers."""
+    transaction_reference = 1_000_000_000
+    while True:
+        transaction_reference += 1
+        yield transaction_reference
+        
 # Define the worker function at the top level (outside the class)
 def _save_log_worker(queue, filename):
     """Worker process to save logs to file."""
@@ -55,13 +59,14 @@ def custom_serializer(obj):
     """Custom serializer for non-serializable objects like datetime."""
     if isinstance(obj, datetime):
         return obj.strftime("%Y-%m-%d %H:%M:%S")
-    raise TypeError(f"Type {type(obj)} not serializable")
+    msg = f"Type {type(obj)} not serializable"
+    raise TypeError(msg)
 
 
 class CPFAccount:
     def __init__(self):  # Accept myself.config
         self.config = CPFConfig( CONFIG_FILENAME ) # Store the myself.config instance
-        self.current_date: datetime = datetime.now()
+        self.current_date: datetime = datetime.now()  # noqa: DTZ005
         self.date_key: str = None
         self.message: str = None
         self.startdate = None
@@ -78,10 +83,6 @@ class CPFAccount:
         self._ra_balance = 0.0
         self._excess_balance = 0.0
         self._loan_balance = 0.0
-        self.start_reference = 100000000        
-        self.counter = count(1)
-        self.trandaction_reference = 0
-        self.dbcounter = count(1)
         self.dbreference = 0
         
         # Log saving setup
@@ -97,14 +98,18 @@ class CPFAccount:
         # Register cleanup function
         atexit.register(self.close_log_writer)
         
-    def add_db_reference(self):
-        self.dbreference = self.start_reference + next(self.dbcounter)
-        return self.dbreference
-    
-    def add_transaction_reference(self):
-        self.trandaction_reference = self.start_reference + next(self.counter)
-        return self.trandaction_reference
-        
+        self.transaction_reference_gen = cumulative_generator()
+
+        self._oa_message = ""
+        self._sa_message = ""
+        self._ma_message = ""
+        self._ra_message = ""
+        self._excess_message = ""
+        self._loan_message = ""
+        self._combined_message = ""
+        self._combinedbelow55_balance_message = ""
+        self._combinedabove55_balance_message = ""
+
     def save_log_to_file(self, log_entry):
         """Send log entry to the worker process."""
         if self.log_process.is_alive():
@@ -135,7 +140,7 @@ class CPFAccount:
         # loglist_entry.append()
         log_entry = {
             "date": self.current_date.strftime("%Y-%m-%d"),
-            "transaction_reference" : self.add_transaction_reference(),
+            "transaction_reference": next(self.transaction_reference_gen),
             "age": self.age,
             "account": "oa",
             "old_balance": self._oa_balance.__round__(2),
@@ -159,7 +164,7 @@ class CPFAccount:
             value, self.message = data
         else:
             # Ensure value is treated as float if data is not a tuple/list
-            value, message = (
+            value, _ = (
                 float(data),
                 "no message",
             )  # Assuming data should be numeric
@@ -167,7 +172,7 @@ class CPFAccount:
         log_entry = {
             # Ensure current_date is set before logging
             "date": self.current_date.strftime("%Y-%m-%d"),
-            "transaction_reference" : self.add_transaction_reference(),
+            "transaction_reference" : next(self.transaction_reference_gen),
             "age": self.age,
             "account": "sa",  # Add account identifier
             "old_balance": self._sa_balance.__round__(2),
@@ -196,7 +201,7 @@ class CPFAccount:
         diff = value - self._ma_balance
         log_entry = {
             "date": self.current_date.strftime("%Y-%m-%d"),
-            "transaction_reference" : self.add_transaction_reference(),
+            "transaction_reference" : next(self.transaction_reference_gen),
             "age": self.age,
             "account": "ma",
             "old_balance": self._ma_balance.__round__(2),
@@ -222,7 +227,7 @@ class CPFAccount:
         diff = value - self._ra_balance
         log_entry = {
             "date": self.current_date.strftime("%Y-%m-%d"),
-            "transaction_reference" : self.add_transaction_reference(),
+            "transaction_reference" : next(self.transaction_reference_gen),
             "age": self.age,
             "account": "ra",
             "old_balance": self._ra_balance.__round__(2),
@@ -248,7 +253,7 @@ class CPFAccount:
         diff = value - self._excess_balance
         log_entry = {
             "date": self.current_date.strftime("%Y-%m-%d"),
-            "transaction_reference" : self.add_transaction_reference(),
+            "transaction_reference" : next(self.transaction_reference_gen),
             "age": self.age,
             "account": "excess",
             "old_balance": self._excess_balance.__round__(2),
@@ -274,7 +279,7 @@ class CPFAccount:
         diff = value - self._loan_balance
         log_entry = {
             "date": self.current_date.strftime("%Y-%m-%d"),
-            "transaction_reference" : self.add_transaction_reference(),
+            "transaction_reference" : next(self.transaction_reference_gen),
             "age": self.age,
             "account": "loan",
             "old_balance": self._loan_balance.__round__(2),
@@ -305,7 +310,7 @@ class CPFAccount:
         diff = value - self._combined_balance
         log_entry = {
             "date": self.current_date.strftime("%Y-%m-%d"),
-            "transaction_reference" : self.add_transaction_reference(),
+            "transaction_reference" : next(self.transaction_reference_gen),
             "age": self.age,
             "account": "combined",
             "old_balance": self._combined_balance.__round__(2),
@@ -320,13 +325,13 @@ class CPFAccount:
 
     @property
     def combinedbelow55_balance(self):
-        # Dynamically calculate the combined below 55 balance if age <= 55
+        # Dynamically calculate the combined below self.config.ageofbrs balance if age <= self.config.ageofbrs
         if self.current_date and self.birthdate:
             age = (self.current_date.year - self.birthdate.year) - (
                 (self.current_date.month, self.current_date.day)
                 < (self.birthdate.month, self.birthdate.day)
             )
-            if age < 55:
+            if age < self.config.ageofbrs:
                 self._combinedbelow55_balance = (
                     self._oa_balance + self._sa_balance + self._ma_balance
                 )
@@ -342,7 +347,7 @@ class CPFAccount:
         diff = value - self._combinedbelow55_balance
         log_entry = {
             "date": self.current_date.strftime("%Y-%m-%d"),
-            "transaction_reference" : self.add_transaction_reference(),
+            "transaction_reference" : next(self.transaction_reference_gen),
             "age": self.age,
             "account": "combined_below_55",
             "old_balance": self._combinedbelow55_balance.__round__(2),
@@ -357,13 +362,13 @@ class CPFAccount:
 
     @property
     def combinedabove55_balance(self):
-        # Dynamically calculate the combined above 55 balance if age >= 55
+        # Dynamically calculate the combined above self.config.ageofbrs balance if age >= self.config.ageofbrs
         if self.current_date and self.birthdate:
             age = (self.current_date.year - self.birthdate.year) - (
                 (self.current_date.month, self.current_date.day)
                 < (self.birthdate.month, self.birthdate.day)
             )
-            if age >= 55:
+            if age >= self.config.ageofbrs:
                 self._combinedabove55_balance = (
                     self._oa_balance + self._ra_balance + self._ma_balance
                 )
@@ -379,7 +384,7 @@ class CPFAccount:
         diff = value - self._combinedabove55_balance
         log_entry = {
             "date": self.current_date.strftime("%Y-%m-%d"),
-            "transaction_reference" : self.add_transaction_reference(),
+            "transaction_reference" : next(self.transaction_reference_gen),
             "age": self.age,
             "account": "combined_above_55",
             "old_balance": self._combinedabove55_balance.__round__(2),
@@ -406,9 +411,7 @@ class CPFAccount:
         self.close_log_writer()
 
     def convert_date_strings(self, key:str, date_str:str):    
-        """
-        Convert date strings in the configuration to datetime objects.
-        """
+        """Convert date strings in the configuration to datetime objects."""
         
         if isinstance(date_str, str) and key.lower() in DATE_KEYS:
             try:
@@ -418,10 +421,11 @@ class CPFAccount:
         elif isinstance(date_str, (date, datetime)):
             return date_str
         else:
-            raise ValueError(f"Invalid date format for {key}: {date_str}. Expected format: YYYY-MM-DD")
-        
+            msg = f"Invalid date format for {key}: {date_str}. Expected format: YYYY-MM-DD"
+            raise ValueError(msg)
+
     def get_date_dict(self, startdate, enddate, birthdate):
-        """Generate a date dictionary.  #this is called once only"""
+        """Generate a date dictionary.  #this is called once only."""
         print(
             "Warning: get_date_dict needs implementation in CPFAccount or be imported correctly."
         )
@@ -433,8 +437,8 @@ class CPFAccount:
         """
         Sets the account balance to the specified new_balance and logs the change.
         The logged 'amount' reflects the difference from the old balance.
-        # this is called every month
-        """
+        # this is called every month.
+        """  # noqa: D205
         valid_accounts = ["oa", "sa", "ma", "ra", "loan", "excess"]
         if account not in valid_accounts:
             print(f"Error: Invalid account name for update_balance: {account}")
@@ -520,34 +524,33 @@ class CPFAccount:
             
 
     def calculate_cpf_allocation(self, account: str) -> float:
-        """
-        Calculates the allocation amount for a specific CPF account based on age and total CPF contribution.
-        """
+        """Calculates the allocation amount for a specific CPF account based on age and total CPF contribution."""
         # Ensure total contributions are calculated
         if self.total_contribution == 0.0:
+            msg = "Total contributions have not been calculated. Call `calculate_total_contributions` first."
             raise ValueError(
-                "Total contributions have not been calculated. Call `calculate_total_contributions` first."
+                msg,
             )
 
         # Determine allocation rates based on age
-        if self.age < 55:
+        if self.age < self.config.ageofbrs:
             alloc_percentage = getattr(self.config,f"allocationbelow55{account}", 0)
             self._oa_allocation55 = alloc_percentage * self.total_contribution
             self._sa_allocation55 = alloc_percentage * self.total_contribution
             self._ma_allocation55 = alloc_percentage * self.total_contribution
             self._ra_allocation55 = 0.0
 
-        elif 55 <= self.age < 60:
+        elif self.config.ageofbrs <= self.age < 60:
             alloc_percentage = getattr(self.config,
                 f"allocationabove55{account}56to60", 0
             )
             self._oa_allocation_5560 = alloc_percentage * self.total_contribution
             self._sa_allocation_5560 = (
-                alloc_percentage * self.total_contribution if self.age <= 55 else 0.0
+                alloc_percentage * self.total_contribution if self.age <= self.config.ageofbrs else 0.0
             )
             self._ma_allocation_5560 = alloc_percentage * self.total_contribution
             self._ra_allocation_5560 = (
-                alloc_percentage * self.total_contribution if self.age > 55 else 0.0
+                alloc_percentage * self.total_contribution if self.age > self.config.ageofbrs else 0.0
             )
         elif 60 <= self.age < 65:
             alloc_percentage = getattr(self.config,f"allocationabove55{account}61to65",0)
@@ -579,9 +582,9 @@ class CPFAccount:
         """
         Compute the CPF allocation amounts for each category (oa, sa, ma, ra) based on the age
         and add them to the configuration using the add_key_value method.
-        """
+        """  # noqa: D205
         # Retrieve the salary cap
-        salary_cap = getattr(self.config,"salarycap", 0)
+       # salary_cap = getattr(self.config,"salarycap", 0)
         self.calculate_total_contributions()
     #    allocation = {}
     #    mydict = {}
@@ -669,13 +672,13 @@ class CPFAccount:
     # self.config.save()
 
     def calculate_combined_balance(self):
-        """calculate the combined balance based on age"""
+        """Calculate the combined balance based on age."""
         oa_balance = 0.0
         sa_balance = 0.0
         ma_balance = 0.0
         ra_balance = 0.0
 
-        if self.age < 55:
+        if self.age < self.config.ageofbrs:
             #                       10_000                     -->  10_000
             oa_balance = min(getattr(self, "_oa_balance", 0), 20_000)
             #                       50_000                    -->   40_000
@@ -687,7 +690,7 @@ class CPFAccount:
                 return oa_balance, sa_balance, ma_balance, 0.00
             ra_balance = 0.00
             return oa_balance, sa_balance, ma_balance, ra_balance
-        elif self.age >= 55:
+        elif self.age >= self.config.ageofbrs:
             #                       50000                     -->  20000
             oa_balance = min(getattr(self, "_oa_balance", 0), 20_000)
             # sa_balance = min(getattr(self, '_sa_balance', 0), 10_000)
@@ -705,11 +708,11 @@ class CPFAccount:
         """
         Apply interest to all CPF accounts at the end of the year.
         This is called every December - 12 of every year.
-        """
+        """  # noqa: D205
         # Retrieve interest rates from the configuration
         oa_rate = (
             self.config.interestratesoabelow55
-            if self.age < 55
+            if self.age < self.config.ageofbrs
             else self.config.interestratesoaabove55
         )
         sa_rate = self.config.interestratessa
@@ -732,13 +735,13 @@ class CPFAccount:
         """
         Apply extra interest to SA and MA accounts based on age.
         This is called every December - 12 of every year.
-        """
+        """  # noqa: D205
         # extra_interest = self.config.getdata(['extra_interest'], {})
         extra_interest_rate = self.config.extrainterestbelow55
         extra_interest1 = self.config.extrainterestfirst30kabove55
-        
+
         extra_interest2 = self.config.extrainterestnext30kabove55
-        
+
         oa_interest = 0.0
         sa_interest = 0.0
         ma_interest = 0.0
@@ -747,13 +750,13 @@ class CPFAccount:
             self.calculate_combined_balance()
         )
 
-        if self.age < 55:
+        if self.age < self.config.ageofbrs:
             oa_interest = oa_balance * (extra_interest_rate / 100 / 12)
             sa_interest = sa_balance * (extra_interest_rate / 100 / 12)
             ma_interest = ma_balance * (extra_interest_rate / 100 / 12)
             ra_interest = 0.0
             return (0, oa_interest + sa_interest, ma_interest, ra_interest)
-        elif self.age >= 55:
+        elif self.age >= self.config.ageofbrs:
             first_30k = min((oa_balance + sa_balance + ma_balance + ra_balance), 30_000)
             next_30k = min(
                 oa_balance + sa_balance + ma_balance + ra_balance - first_30k, 30_000
@@ -768,13 +771,11 @@ class CPFAccount:
 
             return (oa_interest, sa_interest, ma_interest, ra_interest)
 
-    def get_cpf_contribution_rate(self, age: int, is_employee: bool) -> float:
-        """
-        Retrieve CPF contribution rate based on age and employment status.
-        """
-        if age < 55:
+    def get_cpf_contribution_rate(self, age: int, is_employee: bool) -> float:  # noqa: FBT001
+        """Retrieve CPF contribution rate based on age and employment status."""
+        if age < self.config.ageofbrs:
             rates = self.config.cpfcontributionratesbelow55
-        elif 55 <= age < 60:
+        elif self.config.ageofbrs <= age < 60:
             rates = self.config.cpfcontributionrates55to60
         elif 60 <= age < 65:
             rates = self.config.cpfcontributionrates60to65
@@ -784,9 +785,9 @@ class CPFAccount:
             rates = self.config.cpfcontributionratesabove70
 
         rate_key = "employee" if is_employee else "employer"
-        if age < 55:
+        if age < self.config.ageofbrs:
             age_bracket = "below55"
-        elif 55 <= age < 60:
+        elif self.config.ageofbrs <= age < 60:
             age_bracket = "55to60"
         elif 60 <= age < 65:
             age_bracket = "60to65"
@@ -805,9 +806,9 @@ class CPFAccount:
         capped_salary = min(self.salary, self.config.salarycap)
 
         # Determine the correct age bracket for contribution rates
-        if self.age <= 55:
+        if self.age <= self.config.ageofbrs:
             age_bracket = "below55"
-        elif 55 < self.age <= 60:
+        elif self.config.ageofbrs < self.age <= 60:
             age_bracket = "55to60"
         elif 60 < self.age <= 65:
             age_bracket = "60to65"
@@ -865,8 +866,9 @@ class CPFAccount:
         raise TypeError("Type not serializable")
 
     def calculate_loan_payment(self):
-        """Calculates the loan payment amount based on the current loan balance.
-        this is called every month
+        """
+        Calculates the loan payment amount based on the current loan balance.
+        this is called every month.
         """
         # Example logic for calculating loan payment
         if self._loan_balance > 0:
@@ -874,9 +876,10 @@ class CPFAccount:
             interest_rate = 0.03
 
     def calculate_the_loan_amortization(self):
-        """Calculates the loan amortization schedule.
-        this is called every month
         """
+        Calculates the loan amortization schedule.
+        this is called every month.
+        """  # noqa: D205
         # Example logic for calculating loan amortization
         if self._loan_balance > 0:
             # Assuming a fixed interest rate and term for simplicity
@@ -892,9 +895,7 @@ class CPFAccount:
             return 0.0
 
     def loan_computation(self,year) -> float:
-        """
-        Calculates the loan payment amount based on the current loan balance and age.
-        """
+        """Calculates the loan payment amount based on the current loan balance and age."""
         if self._loan_balance <= 0:
             return 0.0
 
@@ -906,10 +907,11 @@ class CPFAccount:
 
 
 if __name__ == "__main__":
+    freeze_support()
     try:
         
         myself = CPFAccount()
-        ages = [25, 55, 60, 65, 70, 75]
+        ages = [25, myself.config.ageofbrs, 60, 65, 70, 75]
         for age in ages:
             myself.age = age
             myself.salary = 5000  # Example salary
