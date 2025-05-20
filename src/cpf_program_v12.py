@@ -59,8 +59,8 @@ def custom_serializer(obj):
 
 
 class CPFAccount:
-    def __init__(self, config_loader):  # Accept config_loader
-        self.config = config_loader  # Store the config_loader instance
+    def __init__(self):  # Accept myself.config
+        self.config = CPFConfig( CONFIG_FILENAME ) # Store the myself.config instance
         self.current_date: datetime = datetime.now()
         self.date_key: str = None
         self.message: str = None
@@ -907,8 +907,8 @@ class CPFAccount:
 
 if __name__ == "__main__":
     try:
-        config_loader = CPFConfig(CONFIG_FILENAME)
-        myself = CPFAccount(config_loader=config_loader)
+        
+        myself = CPFAccount()
         ages = [25, 55, 60, 65, 70, 75]
         for age in ages:
             myself.age = age
@@ -917,7 +917,7 @@ if __name__ == "__main__":
             print(f"Age: {age}, Employee Contribution: {contribution}")
 
             # Test salary cap retrieval
-            salary_cap = config_loader.salarycap
+            salary_cap = myself.config.salarycap
             print(f"Salary Cap: {salary_cap}")
 
         # Test CPF contribution calculation

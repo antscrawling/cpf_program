@@ -1,5 +1,5 @@
-from cpf_config_loader_v11 import CPFConfig
-from cpf_program_v11 import CPFAccount
+#from cpf_cpf.config_v11 import CPFConfig
+from cpf_program_v12 import CPFAccount
 from tqdm import tqdm  # For the progress bar
 from cpf_date_generator_v3 import DateGenerator
 import os
@@ -20,7 +20,7 @@ DATE_KEYS = ["startdate", "enddate", "birthdate"]
 DATE_FORMAT = "%Y-%m-%d"
 
 # Load the configuration file
-# config_loader = ConfigLoader(CONFIG_FILENAME)
+# cpf.config = ConfigLoader(CONFIG_FILENAME)
 
 
 def create_connection():
@@ -77,43 +77,81 @@ def compute_age(startdate: datetime.date, birthdate: datetime.date) -> int:
     return base_age
 
 
+#def main():
+#  # Step 1: Load the configuration
+#  cpf.config = CPFConfig(CONFIG_FILENAME)
+#  startdate = cpf.config.startdate
+#  enddate = cpf.config.enddate
+#  birthdate = cpf.config.birthdate
+#  payouttype = cpf.config.payouttype
+#  if cpf.config.pledgeyourhdbat55.lower() == "no":
+#      retirement_amount = getattr(
+#          cpf.config, f"retirementsums{payouttype}amount", 0
+#      )
+#  else:
+#      retirement_amount = cpf.config.retirementsumsfrsamount / 2
+#
+#  # Validate that the dates are loaded correctly
+#  if not all([startdate, enddate, birthdate]):
+#      raise ValueError(
+#          "Missing required date values in the configuration file. Please check 'startdate', 'enddate', and 'birthdate'."
+#      )
+#
+#  # Step 2: Generate the date dictionary
+#  dategen = DateGenerator(
+#      start_date=startdate, end_date=enddate, birth_date=birthdate
+#  )
+#  date_dict = dategen.generate_date_dict()
+#  dategen.save_file(
+#      dategen.date_list, format="csv"
+#  )  # Step 3 Save the date_dict to file after generation
+#
+#  if not date_dict:
+#      print("Error: date_dict is empty. Loop will not run.")
+#      return  # Exit if empty
+#
+#  is_initial = True
+#  is_display_special_july = False
+#  # Step 4: Calculate CPF per month using CPFAccount
+#  with CPFAccount(cpf.config) as cpf:
 def main():
-    # Step 1: Load the configuration
-    config_loader = CPFConfig(CONFIG_FILENAME)
-    startdate = config_loader.startdate
-    enddate = config_loader.enddate
-    birthdate = config_loader.birthdate
-    payouttype = config_loader.payouttype
-    if config_loader.pledgeyourhdbat55.lower() == "no":
-        retirement_amount = getattr(
-            config_loader, f"retirementsums{payouttype}amount", 0
+    with CPFAccount() as cpf:
+        # Step 1: Load the configuration
+        #cpf.config = CPFConfig(CONFIG_FILENAME)
+        startdate = cpf.config.startdate
+        enddate = cpf.config.enddate
+        birthdate = cpf.config.birthdate
+        payouttype = cpf.config.payouttype
+        if cpf.config.pledgeyourhdbat55.lower() == "no":
+            retirement_amount = getattr(
+                cpf.config, f"retirementsums{payouttype}amount", 0
+            )
+        else:
+            retirement_amount = cpf.config.retirementsumsfrsamount / 2
+
+        # Validate that the dates are loaded correctly
+        if not all([startdate, enddate, birthdate]):
+            raise ValueError(
+                "Missing required date values in the configuration file. Please check 'startdate', 'enddate', and 'birthdate'."
+            )
+
+        # Step 2: Generate the date dictionary
+        dategen = DateGenerator(
+            start_date=startdate, end_date=enddate, birth_date=birthdate
         )
-    else:
-        retirement_amount = config_loader.retirementsumsfrsamount / 2
+        date_dict = dategen.generate_date_dict()
+        dategen.save_file(
+            dategen.date_list, format="csv"
+        )  # Step 3 Save the date_dict to file after generation
 
-    # Validate that the dates are loaded correctly
-    if not all([startdate, enddate, birthdate]):
-        raise ValueError(
-            "Missing required date values in the configuration file. Please check 'startdate', 'enddate', and 'birthdate'."
-        )
+        if not date_dict:
+            print("Error: date_dict is empty. Loop will not run.")
+            return  # Exit if empty
 
-    # Step 2: Generate the date dictionary
-    dategen = DateGenerator(
-        start_date=startdate, end_date=enddate, birth_date=birthdate
-    )
-    date_dict = dategen.generate_date_dict()
-    dategen.save_file(
-        dategen.date_list, format="csv"
-    )  # Step 3 Save the date_dict to file after generation
-
-    if not date_dict:
-        print("Error: date_dict is empty. Loop will not run.")
-        return  # Exit if empty
-
-    is_initial = True
-    is_display_special_july = False
-    # Step 4: Calculate CPF per month using CPFAccount
-    with CPFAccount(config_loader) as cpf:
+        is_initial = True
+        is_display_special_july = False
+        # Step 4: Calculate CPF per month using CPFAccount
+        
         # Step 5  Set the initial values
         cpf.startdate = cpf.convert_date_strings(key="startdate", date_str=startdate)
         cpf.enddate = cpf.convert_date_strings(key="enddate", date_str=enddate)
@@ -134,11 +172,11 @@ def main():
         print(f"{violet}== Birth Date: {cpf.birthdate}{reset}")
         print(f"{violet}== Age: {cpf.age}{reset}")
         print(f"{violet}== Retirement Amount: {retirement_amount:>18,.2f}{reset}")
-        print(f"{violet}== OA Balance Amount: {config_loader.oabalance:>18,.2f}{reset}")
-        print(f"{violet}== SA Balance Amount: {config_loader.sabalance:>18,.2f}{reset}")
-        print(f"{violet}== MA Balance Amount: {config_loader.mabalance:>18,.2f}{reset}")
+        print(f"{violet}== OA Balance Amount: {cpf.config.oabalance:>18,.2f}{reset}")
+        print(f"{violet}== SA Balance Amount: {cpf.config.sabalance:>18,.2f}{reset}")
+        print(f"{violet}== MA Balance Amount: {cpf.config.mabalance:>18,.2f}{reset}")
         print(
-            f"{violet}== Loan Balance Amount: {config_loader.loanbalance:>16,.2f}{reset}"
+            f"{violet}== Loan Balance Amount: {cpf.config.loanbalance:>16,.2f}{reset}"
         )
         print(f"{violet}======================================{reset}")
         print(f"{violet}{'-' * 150}{reset}")
@@ -154,12 +192,12 @@ def main():
             # Use property setters to ensure logging
             # Step 9 set the initial balances
 
-            initoa_balance = float(config_loader.oabalance)
-            initsa_balance = float(config_loader.sabalance)
-            initma_balance = float(config_loader.mabalance)
-            initra_balance = float(config_loader.rabalance)
-            initexcess_balance = float(config_loader.excessbalance)
-            initloan_balance = float(config_loader.loanbalance)
+            initoa_balance = float(cpf.config.oabalance)
+            initsa_balance = float(cpf.config.sabalance)
+            initma_balance = float(cpf.config.mabalance)
+            initra_balance = float(cpf.config.rabalance)
+            initexcess_balance = float(cpf.config.excessbalance)
+            initloan_balance = float(cpf.config.loanbalance)
             # Step 10 record the initial balances
             for account, new_balance in zip(
                 ["oa", "sa", "ma", "ra", "excess", "loan"],
@@ -180,9 +218,9 @@ def main():
             is_initial = False
 
         #  Step 11 get loan payments from config
-        loan_paymenty1 = float(config_loader.loanpaymentsyear12)
-        loan_paymenty3 = float(config_loader.loanpaymentsyear3)
-        loan_paymenty4 = float(config_loader.loanpaymentsyear4beyond)
+        loan_paymenty1 = float(cpf.config.loanpaymentsyear12)
+        loan_paymenty3 = float(cpf.config.loanpaymentsyear3)
+        loan_paymenty4 = float(cpf.config.loanpaymentsyear4beyond)
 
         year = 1  # this is for the loan payments
 
@@ -265,34 +303,34 @@ def main():
                 if cpf.age < 55:
                     cpf.record_inflow(
                         account="oa",
-                        amount=config_loader.allocationbelow55oaamount.__round__(2),
+                        amount=cpf.config.allocationbelow55oaamount.__round__(2),
                         message=f"Allocation for OA at age {cpf.age}",
                     )
                     cpf.record_inflow(
                         account="sa",
-                        amount=config_loader.allocationbelow55saamount.__round__(2),
+                        amount=cpf.config.allocationbelow55saamount.__round__(2),
                         message=f"Allocation for SA at age {cpf.age}",
                     )
                     cpf.record_inflow(
                         account="ma",
-                        amount=config_loader.allocationbelow55maamount.__round__(2),
+                        amount=cpf.config.allocationbelow55maamount.__round__(2),
                         message=f"Allocation for MA at age {cpf.age}",
                     )
                 # Step 15 at the age of 55, SA Balance is closed and transferred to RA.  OA Balance is also transferred to RA.
                 elif cpf.age == 55 and cpf.current_date.month == cpf.birthdate.month:
                     cpf.record_inflow(
                         account="oa",
-                        amount=config_loader.allocationbelow55oaamount.__round__(2),
+                        amount=cpf.config.allocationbelow55oaamount.__round__(2),
                         message=f"Allocation for OA at age {cpf.age}",
                     )
                     cpf.record_inflow(
                         account="sa",
-                        amount=config_loader.allocationbelow55saamount.__round__(2),
+                        amount=cpf.config.allocationbelow55saamount.__round__(2),
                         message=f"Allocation for SA at age {cpf.age}",
                     )
                     cpf.record_inflow(
                         account="ma",
-                        amount=config_loader.allocationbelow55maamount.__round__(2),
+                        amount=cpf.config.allocationbelow55maamount.__round__(2),
                         message=f"Allocation for MA at age {cpf.age}",
                     )
                 else:  # Step 16 allocation for 55 and above
@@ -308,7 +346,7 @@ def main():
                     # Get the allocation amounts from the config
                     for account in ["oa", "ma", "ra"]:
                         allocation_amount = getattr(
-                            config_loader,
+                            cpf.config,
                             f"allocationabove55{account}{age_key}amount",
                             0,
                         )  # dicct.get('allocation_above_55',{}).get(account,{}).get(age_key,{}).get('amount', 0.0))
@@ -464,11 +502,11 @@ def main():
                     # Step 22 Special printing for age 55 and month 7
 
                     if not (
-                        config_loader.ownhdb.lower() == "yes"
-                        and config_loader.pledgeyourhdbat55.lower() == "yes"
+                        cpf.config.ownhdb.lower() == "yes"
+                        and cpf.config.pledgeyourhdbat55.lower() == "yes"
                     ):
                         retirement_amount = getattr(
-                            config_loader, f"retirementsums{payouttype}amount", 0.0
+                            cpf.config, f"retirementsums{payouttype}amount", 0.0
                         ).__round__(2)
                         display_date_key = f"{date_key}-cpf"
                         display_oa_bal = -orig_oa_bal
@@ -486,7 +524,7 @@ def main():
                         ##
                     else:  # meaning you pledged your hdb house at age 55. RA Amount is FRS / 2
                         retirement_amount = (
-                            config_loader.retirementsumsfrsamount / 2
+                            cpf.config.retirementsumsfrsamount / 2
                         ).__round__(2)
                         display_date_key = f"{date_key}-cpf"
                         display_oa_bal = -orig_oa_bal

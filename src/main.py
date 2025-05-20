@@ -168,7 +168,8 @@ def main_page():
             # Log out the user and return to the login screen
             st.session_state["logged_in"] = False
             st.session_state.pop("username", None)
-            st.rerun()
+            st.info("You have exited the application. You may close this tab.")
+            st.stop()  # This will halt the app immediately
 
 def login_page() -> bool:
     """Display the login or registration forms. Returns True if the user is logged in/authenticated."""
@@ -194,7 +195,7 @@ def login_page() -> bool:
         new_password2 = st.text_input("Confirm Password", type="password", key="reg_pass2")
         secret_question = st.selectbox(
             "Secret Question",
-            options=["Name of your pet ?", "Favourite book ?", "Your First School ?"],
+            options=["Name of your pet ?", "Favourite book ?", "Your First School ?",],
             key="reg_secret_question"
         )
         secret_answer = st.text_input("Secret Answer", key="reg_secret_answer")
@@ -250,8 +251,8 @@ def login_page() -> bool:
 
     if quit_btn:
         # User chose to quit the app
-        st.stop()  # Stop the app (no further interface). Alternatively, could just do nothing.
-        return False
+        st.info("You have exited the application. You may close this tab.")
+        st.stop()  # This will halt the app immediately
 
     if login_btn:
         # When login button is clicked, verify credentials
