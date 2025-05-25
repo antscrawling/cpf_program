@@ -1,5 +1,5 @@
 
-# cpf_program
+# cpf_program Central Provident Fund in Singapore.
 New CPF program that calculates Singapore retirement funds.
 
 ## Installation Steps
