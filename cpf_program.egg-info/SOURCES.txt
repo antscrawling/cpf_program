@@ -16,6 +16,7 @@ src/cpf_date_generator_v3.py
 src/cpf_program_v11.py
 src/cpf_run_simulation_v9 copy.py
 src/cpf_run_simulation_v9.py
+src/main copy.py
 src/main.py
 src/test.py
 src/test___init__.py
@@ -27,6 +28,7 @@ src/test_cpf_date_generator_v3.py
 src/test_cpf_program_v11.py
 src/test_cpf_run_simulation_v9 copy.py
 src/test_cpf_run_simulation_v9.py
+src/test_main copy.py
 src/test_main.py
 src/test_testmain.py
 src/test_xcpf_run_simulation_v9copy.py
