@@ -183,8 +183,9 @@ def show_login(myusers):
             st.session_state["register_mode"] = False
             st.session_state["reset_mode"] = False
             st.session_state["reset_verified"] = False
-            st.stop()
-
+            st.session_state["username"] = ""  # Clear the username
+            st.rerun()  # Refresh the app
+            
 def show_main_page():
     st.title("🧾 CPF Simulation Configurator")
     st.subheader("🔧 Edit Parameters")
