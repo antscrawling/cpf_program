@@ -26,6 +26,8 @@ COPY config.toml /root/.streamlit/config.toml
 ENV STREAMLIT_SERVER_PORT=8501
 ENV STREAMLIT_SERVER_ENABLE_CORS=false
 
+# Define PYTHONPATH explicitly
+ENV PYTHONPATH="/app/src"
 # Expose the Streamlit port
 EXPOSE 8501
 

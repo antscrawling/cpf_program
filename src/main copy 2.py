@@ -84,43 +84,25 @@ def show_registration(users):
             st.rerun()
 
 def show_forgot_password(users, username):
-    if not username or username not in users:
-        st.error("Invalid or missing username. Please go back and enter a valid username.")
-        if st.button("Go Back", key="reset_go_back"):
-            st.session_state["reset_mode"] = False
-            st.rerun()
-        return
-
     st.session_state["reset_mode"] = True
     user_secret_question = users[username]["secret_question"]
     st.info(f"Secret Question: **{user_secret_question}**")
-    secret_answer_input = st.text_input("Your Answer to Secret Question", key="reset_secret_answer")
-    col1, col2 = st.columns(2)
-
+    secret_answer_input = st.text_input("Your Answer to Secret Question", key="reset_secret_answer")      
+    col1, col2 , col3, col4 = st.columns(4)
     with col1:
-        if st.button("Submit", key="reset_submit"):
-            if check_password(secret_answer_input.lower(), users[username]["secret_answer"]):
-                st.session_state["reset_verified"] = True
-                st.success("Secret answer verified! Please enter your new password.")
-                st.rerun()
-            else:
-                st.error("Incorrect answer to the secret question.")
-
-    with col2:
-        if st.button("Cancel", key="reset_cancel"):
-            st.session_state["reset_mode"] = False
-            st.session_state["reset_verified"] = False
-            st.rerun()
-
-    if st.session_state.get("reset_verified", False):
-        new_password = st.text_input("Enter new password", type="password", key="reset_pass")
-        col3, col4 = st.columns(2)
-
-        with col3:
-            if st.button("Reset Password", key="reset_password"):
-                if not new_password:
-                    st.error("Password cannot be empty.")
-                else:
+        if (
+            st.button("Submit", key="reset_submit") 
+            and
+            check_password(
+                secret_answer_input.lower(), 
+                users[username]["secret_answer"]
+                )
+        ):
+            st.session_state["reset_verified"] = True         
+            new_password = st.text_input("Enter new password", type="password", key="reset_pass")
+           
+            with col3:
+                if st.button("Reset Password", key="reset_password"):
                     users[username]["password"] = hash_password(new_password)
                     save_users(users)
                     st.success("Password reset successful! Please log in with your new password.")
@@ -128,22 +110,28 @@ def show_forgot_password(users, username):
                     st.session_state["reset_verified"] = False
                     st.rerun()
 
-        with col4:
-            if st.button("Quit", key="reset_quit"):
-                st.session_state["reset_mode"] = False
-                st.session_state["reset_verified"] = False
-                st.rerun()
+            with col4:
+                if  st.button("Quit", key="reset_quit"):
+                    st.session_state["reset_mode"] = False
+                    st.session_state["reset_verified"] = False
+                    st.rerun()
+
+    with col2:
+        if st.button("Cancel", key="reset_cancel"):
+            st.session_state["reset_mode"] = False
+            st.session_state["reset_verified"] = False
+            st.rerun()
 
 def show_login(myusers):
     st.header("🔒 Login")
-    username = st.text_input("Username", key="login_username_input")
-    password = st.text_input("Password", type="password", key="login_password_input")
+    USERNAME = st.text_input("Username",key="username_input")
+    password = st.text_input("Password", type="password",key="password_input")
     secret_question = st.selectbox(
         "Secret Question",
         options=["Name of your pet ?", "Favourite book ?", "Your First School ?"],
-        key="login_secret_question"
+        key="secret_question"
     )
-    secret_answer = st.text_input("Secret Answer", key="login_secret_answer")
+    secret_answer = st.text_input("Secret Answer", key="secret_answer")
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
@@ -159,16 +147,14 @@ def show_login(myusers):
                 st.session_state["register_mode"] = False
                 st.session_state["reset_mode"] = False
                 st.session_state["reset_verified"] = False
-                st.session_state["username"] = username  # Save username in session state
                 st.success("Login successful!")
                 st.rerun()
             else:
                 st.error("Invalid username, password, or secret answer.")
-
+        return USERNAME
     with col2:
         if st.button("Forgot", key="forgot_button"):
             st.session_state["reset_mode"] = True
-            st.session_state["username"] = username  # Save username for reset flow
             st.rerun()
 
     with col3:
@@ -183,7 +169,7 @@ def show_login(myusers):
             st.session_state["register_mode"] = False
             st.session_state["reset_mode"] = False
             st.session_state["reset_verified"] = False
-            st.stop()
+            st.rerun()            
 
 def show_main_page():
     st.title("🧾 CPF Simulation Configurator")
@@ -286,21 +272,21 @@ def main():
         ("register_mode", False),
         ("reset_mode", False),
         ("reset_verified", False),
-        ("Main Page", False),
-        ("username", ""),  # Add username to session state
+        ("Main Page", False)
     ]:
         if key not in st.session_state:
             st.session_state[key] = val
 
     # Main logic flow
+    USERNAME : str = show_login(users)
     if st.session_state["logged_in"] and st.session_state["Main Page"]:
         show_main_page()
     elif st.session_state["register_mode"]:
         show_registration(users)
     elif st.session_state["reset_mode"]:
-        show_forgot_password(users, st.session_state["username"])
+        show_forgot_password(users, USERNAME)
     else:
-        show_login(users)
+        USERNAME : str = show_login(users)
 
 if __name__ == "__main__":
     main()
