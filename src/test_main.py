@@ -37,7 +37,7 @@ def check_password(password: str, hashed: str) -> bool:
 
 def migrate_secret_answers(users):
     changed = False
-    for user, data in users.items():
+    for _, data in users.items():
         secret_answer = data.get("secret_answer", "")
         if not (isinstance(secret_answer, str) and secret_answer.startswith("$2")):
             data["secret_answer"] = hash_password(secret_answer.lower())
@@ -56,20 +56,19 @@ def show_registration(users):
         key="reg_secret_question"
     )
     secret_answer = st.text_input("Secret Answer", key="reg_secret_answer")
-    create_btn = st.button("Create Account")
-    cancel_btn = st.button("Cancel")
-
-    if create_btn:
-        if username in users:
-            st.error("Username already exists.")
-        elif new_password1 != new_password2:
-            st.error("Passwords do not match.")
-        elif not new_password1 or not new_password2:
-            st.error("Password fields cannot be empty.")
-        elif not secret_answer:
-            st.error("Secret answer cannot be empty.")
-        else:
-            users[username] = {
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Create Account", key="create_account"):
+            if username in users:
+                st.error("Username already exists.")
+            elif new_password1 != new_password2:
+                st.error("Passwords do not match.")
+            elif not new_password1 or not new_password2:
+                st.error("Password fields cannot be empty.")
+            elif not secret_answer:
+                st.error("Secret answer cannot be empty.")
+            else:
+                users[username] = {
                 "password": hash_password(new_password1),
                 "secret_question": secret_question,
                 "secret_answer": hash_password(secret_answer.lower())
@@ -78,38 +77,46 @@ def show_registration(users):
             st.success("Account created successfully! Please log in.")
             st.session_state["register_mode"] = False
             st.rerun()
-    if cancel_btn:
-        st.session_state["register_mode"] = False
-        st.rerun()
+    with col2:
+        if st.button("Cancel", key="cancel_registration"):
+            st.session_state["register_mode"] = False
+            st.rerun()
 
 def show_forgot_password(users, username):
     st.session_state["reset_mode"] = True
     user_secret_question = users[username]["secret_question"]
     st.info(f"Secret Question: **{user_secret_question}**")
-    secret_answer_input = st.text_input("Your Answer to Secret Question", key="reset_secret_answer")
-    s_btn = st.button("Submit", key="submit_reset")
-    q_btn = st.button("Cancel", key="cancel_reset")
-    if q_btn:
-        st.session_state["reset_mode"] = False
-        st.session_state["reset_verified"] = False
-        st.rerun()
-    elif s_btn:
-        if check_password(secret_answer_input.lower(), users[username]["secret_answer"]):
-            st.session_state["reset_verified"] = True
-        else:
-            st.error("Incorrect answer to secret question.")
-    if st.session_state.get("reset_verified", False):
-        new_password = st.text_input("Enter new password", type="password", key="reset_pass")
-        button_reset = st.button("Reset", key="do_reset")
-        button_quit = st.button("Quit", key="quit_reset")
-        if button_quit:
-            st.session_state["reset_mode"] = False
-            st.session_state["reset_verified"] = False
-            st.rerun()
-        elif button_reset:
-            users[username]["password"] = hash_password(new_password)
-            save_users(users)
-            st.success("Password reset successful! Please log in with your new password.")
+    secret_answer_input = st.text_input("Your Answer to Secret Question", key="reset_secret_answer")      
+    col1, col2 , col3, col4 = st.columns(4)
+    with col1:
+        if (
+            st.button("Submit", key="reset_submit") 
+            and
+            check_password(
+                secret_answer_input.lower(), 
+                users[username]["secret_answer"]
+                )
+        ):
+            st.session_state["reset_verified"] = True         
+            new_password = st.text_input("Enter new password", type="password", key="reset_pass")
+           
+            with col3:
+                if st.button("Reset Password", key="reset_password"):
+                    users[username]["password"] = hash_password(new_password)
+                    save_users(users)
+                    st.success("Password reset successful! Please log in with your new password.")
+                    st.session_state["reset_mode"] = False
+                    st.session_state["reset_verified"] = False
+                    st.rerun()
+
+            with col4:
+                if  st.button("Quit", key="reset_quit"):
+                    st.session_state["reset_mode"] = False
+                    st.session_state["reset_verified"] = False
+                    st.rerun()
+
+    with col2:
+        if st.button("Cancel", key="reset_cancel"):
             st.session_state["reset_mode"] = False
             st.session_state["reset_verified"] = False
             st.rerun()
@@ -124,43 +131,71 @@ def show_login(users):
         key="secret_question"
     )
     secret_answer = st.text_input("Secret Answer", key="secret_answer")
-    login_btn = st.button("Login")
-    forgot_btn = st.button("Forgot Password?")
-    register_btn = st.button("Register")
-    quit_btn = st.button("Quit")
+    col1, col2, col3, col4  = st.columns(4)
 
-    if quit_btn:
-        st.write("Exiting the application...")
-        st.stop()
+    with col1:
+        if st.button("Login", key="login_button"):
+            st.session_state['logged_in'] = True
+            if (username in users 
+                and 
+                check_password(password, users[username]["password"]) 
+                and
+                users[username]["secret_question"] == secret_question 
+                and 
+                check_password(secret_answer.lower(), 
+                               users[username]["secret_answer"])
+                ):
+                st.session_state["Main Page"] = True
+                st.session_state["register_mode"] = False
+                st.session_state["reset_mode"] = False
+                show_main_page()
 
-    if login_btn:
-        if (
-            username in users and 
-            check_password(password, users[username]["password"]) and
-            users[username]["secret_question"] == secret_question and 
-            check_password(secret_answer.lower(), users[username]["secret_answer"])
-        ):
-            st.session_state["logged_in"] = True
-            st.session_state["username"] = username
-            st.session_state["Main Page"] = True
+    with col2:
+        if st.button("Forgot", key="forgot_button"):
+            st.session_state["reset_mode"] = True
+            show_forgot_password(users, username)
+    with col3:
+        if st.button("Register", key="register_button"):
+            st.session_state["register_mode"] = True
+            show_registration(users)
+    with col4:
+        if st.button("Quit", key="quit_button"):
+            st.session_state["logged_in"] = False
+            st.session_state["Main Page"] = False
             st.session_state["register_mode"] = False
             st.session_state["reset_mode"] = False
             st.session_state["reset_verified"] = False
-            st.success("Login successful!")
-            st.rerun()
-        else:
-            st.error("Invalid username, password, or secret answer.")
+            st.stop()
 
-    if register_btn:
-        st.session_state["register_mode"] = True
-        st.rerun()
 
-    if forgot_btn or st.session_state.get("reset_mode", False):
-        if username in users:
-            show_forgot_password(users, username)
-        else:
-            st.error("Username not found.")
-        st.stop()
+ # if login_btn:
+ #     if (
+ #         username in users and 
+ #         check_password(password, users[username]["password"]) and
+ #         users[username]["secret_question"] == secret_question and 
+ #         check_password(secret_answer.lower(), users[username]["secret_answer"])
+ #     ):
+ #         st.session_state["logged_in"] = True
+ #         st.session_state["username"] = username
+ #         st.session_state["Main Page"] = True
+ #         st.session_state["register_mode"] = False
+ #         st.session_state["reset_mode"] = False
+ #         st.session_state["reset_verified"] = False
+ #         st.success("Login successful!")
+ #         st.rerun()
+ #     else:
+ #         st.error("Invalid username, password, or secret answer.")
+
+ # if register_btn:
+ #     st.session_state["register_mode"] = True
+ #     st.rerun()
+
+ # if forgot_btn or st.session_state.get("reset_mode", False):
+ #     if username in users:
+ #         show_forgot_password(users, username)
+ #     else:
+ #         st.error("Username not found.")
+ #     st.stop()
 
 def show_main_page():
     st.title("🧾 CPF Simulation Configurator")

@@ -5,4 +5,4 @@ striprtf
 numpy
 paramiko
 pandas
-
+streamlit

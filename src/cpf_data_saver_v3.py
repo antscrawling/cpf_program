@@ -2,7 +2,7 @@
 import json
 import pickle
 import shelve
-import pandas as pd
+#import pandas as pd
 import csv
 from datetime import datetime
 from typing import Any, Union, List
