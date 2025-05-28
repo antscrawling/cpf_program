@@ -1,3 +1,4 @@
+from __init__ import SRC_DIR, CONFIG_FILENAME, LOG_FILE_PATH, DATABASE_NAME
 from cpf_config_loader_v11 import CPFConfig
 from cpf_program_v11 import CPFAccount
 from tqdm import tqdm  # For the progress bar
@@ -9,13 +10,13 @@ from datetime import datetime, timedelta, date
 from dateutil.relativedelta import relativedelta
 
 # Dynamically determine the src directory
-SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Path to the src directory
-CONFIG_FILENAME = os.path.join(
-    SRC_DIR, "cpf_config.json"
-)  # Full path to the config file
-DATABASE_NAME = os.path.join(
-    SRC_DIR, "cpf_simulation.db"
-)  # Full path to the database file
+#SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Path to the src directory
+#CONFIG_FILENAME = os.path.join(
+#    SRC_DIR, "cpf_config.json"
+#)  # Full path to the config file
+#DATABASE_NAME = os.path.join(
+#    SRC_DIR, "cpf_simulation.db"
+# # Full path to the database file
 DATE_KEYS = ["startdate", "enddate", "birthdate"]
 DATE_FORMAT = "%Y-%m-%d"
 
@@ -28,7 +29,7 @@ def create_connection():
     conn = None
     try:
         conn = sqlite3.connect(DATABASE_NAME)
-        print(sqlite3.version)
+      
     except sqlite3.Error as e:
         print(e)
     return conn

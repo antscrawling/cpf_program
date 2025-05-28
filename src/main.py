@@ -1,166 +1,313 @@
+from __init__ import (
+    SRC_DIR, CONFIG_FILENAME, FLAT_FILENAME, USER_FILE, PATH
+)
 import streamlit as st
-import subprocess
+import bcrypt
 import json
-from cpf_config_loader_v11 import CPFConfig
 import os
+from cpf_config_loader_v11 import CPFConfig
 from datetime import datetime, date
 import sys
+import subprocess
 import webbrowser
 
-PATH = os.path.dirname(os.path.abspath(__file__))  # Dynamically determine the src directory
-SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Path to the src directory
-CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')  # Full path to the config file
-FLAT_FILENAME = os.path.join(SRC_DIR, 'test_config1.json')  # Full path to the flat config file
-#DATABASE_NAME = os.path.join(SRC_DIR, 'cpf_simulation.db')  # Full path to the database file
-
-
 st.set_page_config(page_title="CPF Simulation Setup", layout="wide")
-st.title("🧾 CPF Simulation Configurator")
 
-# Load the configuration
-config = CPFConfig(CONFIG_FILENAME)
-#
-# Display the flat dictionary in the Streamlit app
-st.subheader("🔧 Edit Parameters")
-updated_config = {}
+#PATH = os.path.dirname(os.path.abspath(__file__))
+#SRC_DIR = PATH
+#CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')
+#FLAT_FILENAME = os.path.join(SRC_DIR, 'test_config1.json')
+#USER_FILE = os.path.join(SRC_DIR, "users.json")
+username : str  = ""
 
-for key, value in config.data.items():
-    if isinstance(value, (int, float)):
-        updated_value = st.number_input(key, value=value)
-    elif isinstance(value, str):
-        updated_value = st.text_input(key, value=value)
-    else:
-        updated_value = st.text_area(key, value=json.dumps(value))
-    updated_config[key] = updated_value
+def load_users():
+    if not os.path.exists(USER_FILE):
+        with open(USER_FILE, "w") as f:
+            json.dump({}, f)
+        st.warning("No users found. Please register a new user.")
+        return {}
+    with open(USER_FILE, "r") as f:
+        return json.load(f)
 
+def save_users(users):
+    with open(USER_FILE, "w") as f:
+        json.dump(users, f)
 
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
-# Save the updated configuration
-col1, col2, col3, col4, col5, col6  = st.columns(6)
+def check_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode(), hashed.encode())
 
-with col1:
-    if st.button("💾 Save"):
-        
-       # # Convert updated_config back to a nested dictionary
-       # def unflatten_dict(d, sep="."):
-       #     result = {}
-       #     for k, v in d.items():
-       #         keys = k.split(sep)
-       #         current = result
-       #         for key in keys[:-1]:
-       #             current = current.setdefault(key, {})
-       #         current[keys[-1]] = v
-       #     return result
-#
-       # nested_config = unflatten_dict(updated_config)
-#
-       # # Save the updated configuration back to the file
-       # for k, v in nested_config.items():
-       #     if isinstance(v, (datetime, date)):
-       #         nested_config[k] = v.strftime("%Y-%m-%d")  # Convert dates to strings
-       #     elif isinstance(v, str):
-       #         try:
-       #             # Attempt to parse JSON strings back into dictionaries
-       #             nested_config[k] = json.loads(v)
-       #         except (json.JSONDecodeError, TypeError):
-       #             # Keep as string if not valid JSON
-       #             nested_config[k] = v
+def migrate_secret_answers(users):
+    changed = False
+    for _, data in users.items():
+        secret_answer = data.get("secret_answer", "")
+        if not (isinstance(secret_answer, str) and secret_answer.startswith("$2")):
+            data["secret_answer"] = hash_password(secret_answer.lower())
+            changed = True
+    if changed:
+        save_users(users)
 
-        # Save the updated configuration to a file
-        with open(CONFIG_FILENAME, "w") as f:
-            json.dump(config.data, f, indent=4)
-        st.success("Configuration saved successfully!")
-        
-    
-# Use the full path to the Python executable
-python_executable = sys.executable  # This gets the current Python executable being used
+def show_registration(users):
+    st.header("Register New Account")
+    username = st.text_input("New Username", key="reg_user")
+    new_password1 = st.text_input("New Password", type="password", key="reg_pass1")
+    new_password2 = st.text_input("Confirm Password", type="password", key="reg_pass2")
+    secret_question = st.selectbox(
+        "Secret Question",
+        options=["Name of your pet ?", "Favourite book ?", "Your First School ?"],
+        key="reg_secret_question"
+    )
+    secret_answer = st.text_input("Secret Answer", key="reg_secret_answer")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Create Account", key="create_account"):
+            if username in users:
+                st.error("Username already exists.")
+            elif new_password1 != new_password2:
+                st.error("Passwords do not match.")
+            elif not new_password1 or not new_password2:
+                st.error("Password fields cannot be empty.")
+            elif not secret_answer:
+                st.error("Secret answer cannot be empty.")
+            else:
+                users[username] = {
+                "password": hash_password(new_password1),
+                "secret_question": secret_question,
+                "secret_answer": hash_password(secret_answer.lower())
+            }
+            save_users(users)
+            st.success("Account created successfully! Please log in.")
+            st.session_state["register_mode"] = False
+            st.rerun()
+    with col2:
+        if st.button("Cancel", key="cancel_registration"):
+            st.session_state["register_mode"] = False
+            st.rerun()
 
-with col2:
-    if st.button("Run Simulation"):
-        # Run the simulation script
-        try:
-            result = subprocess.run(
-                [python_executable, os.path.join(PATH, "cpf_run_simulation_v9.py")],
-                check=True,
-                capture_output=True,
-                text=True
-            )
-            # Save the simulation output to a temporary file
-            simulation_output_path = os.path.join(SRC_DIR, "simulation_output.html")
-            with open(simulation_output_path, "w") as f:
-                f.write(f"<pre>{result.stdout}</pre>")
+def show_forgot_password(users, username):
+    if not username or username not in users:
+        st.error("Invalid or missing username. Please go back and enter a valid username.")
+        if st.button("Go Back", key="reset_go_back"):
+            st.session_state["reset_mode"] = False
+            st.rerun()
+        return
 
-            # Open the simulation output in a new browser tab
-            webbrowser.open_new_tab(f"file://{simulation_output_path}")
+    st.session_state["reset_mode"] = True
+    user_secret_question = users[username]["secret_question"]
+    st.info(f"Secret Question: **{user_secret_question}**")
+    secret_answer_input = st.text_input("Your Answer to Secret Question", key="reset_secret_answer")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("Submit", key="reset_submit"):
+            if check_password(secret_answer_input.lower(), users[username]["secret_answer"]):
+                st.session_state["reset_verified"] = True
+                st.success("Secret answer verified! Please enter your new password.")
+                st.rerun()
+            else:
+                st.error("Incorrect answer to the secret question.")
+
+    with col2:
+        if st.button("Cancel", key="reset_cancel"):
+            st.session_state["reset_mode"] = False
+            st.session_state["reset_verified"] = False
+            st.rerun()
+
+    if st.session_state.get("reset_verified", False):
+        new_password = st.text_input("Enter new password", type="password", key="reset_pass")
+        col3, col4 = st.columns(2)
+
+        with col3:
+            if st.button("Reset Password", key="reset_password"):
+                if not new_password:
+                    st.error("Password cannot be empty.")
+                else:
+                    users[username]["password"] = hash_password(new_password)
+                    save_users(users)
+                    st.success("Password reset successful! Please log in with your new password.")
+                    st.session_state["reset_mode"] = False
+                    st.session_state["reset_verified"] = False
+                    st.rerun()
+
+        with col4:
+            if st.button("Quit", key="reset_quit"):
+                st.session_state["reset_mode"] = False
+                st.session_state["reset_verified"] = False
+                st.write("The application has been stopped. You can now close this tab.")
+                st.stop()  # Halt the Streamlit script
+
+def show_login(myusers):
+    st.header("🔒 Login")
+    username = st.text_input("Username", key="login_username_input")
+    password = st.text_input("Password", type="password", key="login_password_input")
+    secret_question = st.selectbox(
+        "Secret Question",
+        options=["Name of your pet ?", "Favourite book ?", "Your First School ?"],
+        key="login_secret_question"
+    )
+    secret_answer = st.text_input("Secret Answer", key="login_secret_answer")
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        if st.button("Login", key="login_button"):
+            if (
+                username in myusers and
+                check_password(password, myusers[username]["password"]) and
+                myusers[username]["secret_question"] == secret_question and
+                check_password(secret_answer.lower(), myusers[username]["secret_answer"])
+            ):
+                st.session_state["logged_in"] = True
+                st.session_state["Main Page"] = True
+                st.session_state["register_mode"] = False
+                st.session_state["reset_mode"] = False
+                st.session_state["reset_verified"] = False
+                st.session_state["username"] = username  # Save username in session state
+                st.success("Login successful!")
+                st.rerun()
+            else:
+                st.error("Invalid username, password, or secret answer.")
+
+    with col2:
+        if st.button("Forgot", key="forgot_button"):
+            st.session_state["reset_mode"] = True
+            st.session_state["username"] = username  # Save username for reset flow
+            st.rerun()
+
+    with col3:
+        if st.button("Register", key="register_button"):
+            st.session_state["register_mode"] = True
+            st.rerun()
+
+    with col4:
+        if st.button("Quit", key="quit_button"):
+            st.session_state["logged_in"] = False
+            st.session_state["Main Page"] = False
+            st.session_state["register_mode"] = False
+            st.session_state["reset_mode"] = False
+            st.session_state["reset_verified"] = False
+            st.session_state["username"] = ""  # Clear the username
+            st.write("The application has been stopped. You can now close this tab.")
+            st.stop()  # Halt the Streamlit script
             
-            # Generate a link to open the simulation output in a new tab
-            simulation_url = f"file://{simulation_output_path}"
-            st.success("Simulation completed! Click the link below to view the output:")
-            st.markdown(f'<a href="{simulation_url}" target="_blank">Open Simulation Output</a>', unsafe_allow_html=True)
-        except subprocess.CalledProcessError as e:
-            st.error("Simulation failed:")
-            st.code(e.stderr or str(e))
+def show_main_page():
+    st.title("🧾 CPF Simulation Configurator")
+    st.subheader("🔧 Edit Parameters")
+    config = CPFConfig(CONFIG_FILENAME)
+    updated_config = {}
+    for key, value in config.data.items():
+        if isinstance(value, (int, float)):
+            updated_value = st.number_input(key, value=value)
+        elif isinstance(value, str):
+            updated_value = st.text_input(key, value=value)
+        else:
+            updated_value = st.text_area(key, value=json.dumps(value))
+        updated_config[key] = updated_value
 
-with col3:
-    if st.button("🚀 Run CSV Report"):
-        # Run the report generation script
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    with col1:
+        if st.button("💾 Save",key="save_configuration"):
+            config.data = updated_config
+            with open(CONFIG_FILENAME, "w") as f:
+                json.dump(config.data, f, indent=4)
+            st.success("Configuration saved successfully!")
+    with col2:
+        if st.button("Run Simulation",key="run_simulation"):
+            try:
+                python_executable = sys.executable
+                result = subprocess.run(
+                    [python_executable, os.path.join(PATH, "cpf_run_simulation_v9.py")],
+                    check=True, capture_output=True, text=True
+                )
+                output_path = os.path.join(SRC_DIR, "simulation_output.html")
+                with open(output_path, "w") as f:
+                    f.write(f"<pre>{result.stdout}</pre>")
+                webbrowser.open_new_tab(f"file://{output_path}")
+                st.success("Simulation completed! The output will open in a new tab.")
+            except subprocess.CalledProcessError as e:
+                st.error("Simulation failed:")
+                st.code(e.stderr or str(e))
+    with col3:
+        if st.button("🚀 Run CSV Report",key="run_csv"):
+            try:
+                python_executable = sys.executable
+                result = subprocess.run(
+                    [python_executable, os.path.join(PATH, "cpf_build_reports_v1.py")],
+                    check=True, capture_output=True, text=True
+                )
+                st.success("CSV report generated successfully!")
+                st.code(result.stdout)
+            except subprocess.CalledProcessError as e:
+                st.error("CSV report generation failed:")
+                st.code(e.stderr or str(e))
+    with col4:
+        if st.button("📊 Run Analysis",key="run_analysis"):
+            try:
+                python_executable = sys.executable
+                result = subprocess.run(
+                    [python_executable, os.path.join(PATH, "cpf_analysis_v1.py")],
+                    check=True, capture_output=True, text=True
+                )
+                st.success("Analysis completed successfully!")
+                st.code(result.stdout)
+            except subprocess.CalledProcessError as e:
+                st.error("Analysis failed:")
+                st.code(e.stderr or str(e))
+    with col5:
+        import pandas as pd
+        import dicttoxml
+        report_file_path = os.path.join(SRC_DIR, "cpf_report.csv")
         try:
-            result = subprocess.run(
-                [python_executable, os.path.join(PATH, "cpf_build_reports_v1.py")],
-                check=True,
-                capture_output=True,
-                text=True
+            report_df = pd.read_csv(report_file_path)
+            report_dict = report_df.to_dict(orient="records")
+            xml_data = dicttoxml.dicttoxml(report_dict, custom_root="CPFReport", attr_type=False)
+            st.download_button(key="download_xml",
+                label="Download XML",
+                data=xml_data,
+                file_name="cpf_report.xml",
+                mime="application/xml"
             )
-            st.success("CSV Report generated successfully!")
-            st.code(result.stdout)
-        except subprocess.CalledProcessError as e:
-            st.error("CSV Report generation failed:")
-            st.code(e.stderr or str(e))
+        except FileNotFoundError:
+            st.error(f"File not found: {report_file_path}")
+        except Exception as e:
+            st.error(f"An error occurred while generating the XML: {e}")
+    with col6:
+        if st.button("🛑 EXIT",key="exit_button"):
+            st.write("Exiting the application...")
+            st.session_state["logged_in"] = False
+            st.session_state["Main Page"] = False
+            st.session_state["register_mode"] = False
+            st.session_state["reset_mode"] = False
+            st.session_state["reset_verified"] = False
+            #st.rerun()
+            os._exit(0)  # Force exit the application
 
-with col4:
-    if st.button("📊 Run Analysis"):
-        # Run the analysis script
-        try:
-            result = subprocess.run(
-                [python_executable, os.path.join(PATH, "cpf_analysis_v1.py")],
-                check=True,
-                capture_output=True,
-                text=True
-            )
-            st.success("Analysis completed successfully!")
-            st.code(result.stdout)
-        except subprocess.CalledProcessError as e:
-            st.error("Analysis failed:")
-            st.code(e.stderr or str(e))
-        
-with col5:
-    import dicttoxml
-    import pandas as pd
+def main():
+    users = load_users()
+    migrate_secret_answers(users)
 
-    # Read the contents of cpf_report.csv
-    report_file_path = os.path.join(SRC_DIR, "cpf_report.csv")
-    try:
-        report_df = pd.read_csv(report_file_path)
-        # Convert the DataFrame to a dictionary
-        report_dict = report_df.to_dict(orient="records")
-        # Convert the dictionary to XML
-        xml_data = dicttoxml.dicttoxml(report_dict, custom_root="CPFReport", attr_type=False)
-        # Provide the XML data for download
-        st.download_button(
-            label="Download XML",
-            data=xml_data,
-            file_name="cpf_report.xml",
-            mime="application/xml",
-        )
-    except FileNotFoundError:
-        st.error(f"File not found: {report_file_path}")
-    except Exception as e:
-        st.error(f"An error occurred while generating the XML: {e}")
+    # Initialize session state variables if not set
+    for key, val in [
+        ("logged_in", False),
+        ("register_mode", False),
+        ("reset_mode", False),
+        ("reset_verified", False),
+        ("Main Page", False),
+        ("username", ""),  # Add username to session state
+    ]:
+        if key not in st.session_state:
+            st.session_state[key] = val
 
-with col6:
-    if st.button(" EXIT "):
-        # Forcefully exit the Streamlit app
-        st.write("Exiting the application...")
-        os._exit(0)
+    # Main logic flow
+    if st.session_state["logged_in"] and st.session_state["Main Page"]:
+        show_main_page()
+    elif st.session_state["register_mode"]:
+        show_registration(users)
+    elif st.session_state["reset_mode"]:
+        show_forgot_password(users, st.session_state["username"])
+    else:
+        show_login(users)
 
-
+if __name__ == "__main__":
+    main()
