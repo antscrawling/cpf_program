@@ -38,7 +38,7 @@ endif
 run:
 	@echo "Running the CPF program..."
 	@echo "Activate the virtual environment first using 'source .venv/bin/activate' (Linux/Mac) or '.venv\Scripts\activate' (Windows)."
-	. .venv/bin/activate && streamlit run src/main.py --server.headless true
+	. .venv/bin/activate && streamlit run  src/main.py --server.headless true
 
 docker-build:
 	docker build -t antscrawlingjay/cpf-program .
