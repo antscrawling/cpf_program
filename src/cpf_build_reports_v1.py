@@ -3,10 +3,13 @@ from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 from typing import Any
 import os
+from pathlib import Path
 
-CONFIG_FILENAME = 'cpf_config.json'
-SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Dynamically determine the src directory
-LOG_FILE_PATH = os.path.join(SRC_DIR, "cpf_log_file.csv")  # Log file path inside src folder
+#a=os.path.dirname(os.path.abspath(__file__))
+#b=Path(__file__).resolve().parent 
+#SRC_DIR = "/src" #Path(__file__).resolve().parent  # Dynamically determine the src directory
+#CONFIG_FILENAME = os.path.join( "src/cpf_config.json")
+#LOG_FILE_PATH = os.path.join("src/cpf_log_file.csv")  # Log file path inside src folder
 
 #PATH="$HOME/miniconda3/bin:$PATcd srH"
 
