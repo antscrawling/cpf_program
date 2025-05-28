@@ -1,4 +1,4 @@
-from src import SRC_DIR, CONFIG_FILENAME, LOG_FILE_PATH
+from __init__ import SRC_DIR, CONFIG_FILENAME, LOG_FILE_PATH, DATABASE_NAME
 from cpf_config_loader_v11 import CPFConfig
 from cpf_program_v11 import CPFAccount
 from tqdm import tqdm  # For the progress bar
@@ -14,9 +14,9 @@ from dateutil.relativedelta import relativedelta
 #CONFIG_FILENAME = os.path.join(
 #    SRC_DIR, "cpf_config.json"
 #)  # Full path to the config file
-DATABASE_NAME = os.path.join(
-    SRC_DIR, "cpf_simulation.db"
- # Full path to the database file
+#DATABASE_NAME = os.path.join(
+#    SRC_DIR, "cpf_simulation.db"
+# # Full path to the database file
 DATE_KEYS = ["startdate", "enddate", "birthdate"]
 DATE_FORMAT = "%Y-%m-%d"
 

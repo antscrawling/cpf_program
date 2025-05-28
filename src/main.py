@@ -1,3 +1,6 @@
+from __init__ import (
+    SRC_DIR, CONFIG_FILENAME, FLAT_FILENAME, USER_FILE, PATH
+)
 import streamlit as st
 import bcrypt
 import json
@@ -10,11 +13,11 @@ import webbrowser
 
 st.set_page_config(page_title="CPF Simulation Setup", layout="wide")
 
-PATH = os.path.dirname(os.path.abspath(__file__))
-SRC_DIR = PATH
-CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')
-FLAT_FILENAME = os.path.join(SRC_DIR, 'test_config1.json')
-USER_FILE = os.path.join(SRC_DIR, "users.json")
+#PATH = os.path.dirname(os.path.abspath(__file__))
+#SRC_DIR = PATH
+#CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')
+#FLAT_FILENAME = os.path.join(SRC_DIR, 'test_config1.json')
+#USER_FILE = os.path.join(SRC_DIR, "users.json")
 username : str  = ""
 
 def load_users():

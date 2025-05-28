@@ -1,4 +1,5 @@
 # data_saver_v2.py
+from __init__ import SRC_DIR, CONFIG_FILENAME, LOG_FILE_PATH
 import json
 import pickle
 import shelve
@@ -8,9 +9,9 @@ from datetime import datetime
 from typing import Any, Union, List
 import os
 
-SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Path to the src directory
-CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')  # Full path to the config file
-LOG_FILE_PATH = os.path.join(SRC_DIR, "cpf_log_file.csv")  # Log file path inside src folder
+#SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Path to the src directory
+#CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')  # Full path to the config file
+#LOG_FILE_PATH = os.path.join(SRC_DIR, "cpf_log_file.csv")  # Log file path inside src folder
 
 def custom_serializer(obj):
     """Custom serializer for non-serializable objects like datetime."""

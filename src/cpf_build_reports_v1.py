@@ -1,3 +1,4 @@
+from __init__ import SRC_DIR, CONFIG_FILENAME, LOG_FILE_PATH
 import pandas as pd
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
@@ -196,8 +197,8 @@ class CPFLogEntry:
 
 if __name__ == "__main__":
     # Example usage
-    csv_file_path = "cpf_log_file.csv"
-    cpflogs = CPFLogEntry(csv_file_path)
+    #csv_file_path = "cpf_log_file.csv"
+    cpflogs = CPFLogEntry(LOG_FILE_PATH)
     cpflogs.build_report()
 
 

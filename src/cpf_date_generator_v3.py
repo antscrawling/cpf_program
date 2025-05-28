@@ -1,4 +1,5 @@
 # cpf_date_generator_v2.py
+from __init__ import SRC_DIR, CONFIG_FILENAME, LOG_FILE_PATH, DATE_DICT, DATE_LIST
 from datetime import date, datetime # Ensure date is imported
 from dateutil.relativedelta import relativedelta
 from calendar import monthrange
@@ -7,13 +8,13 @@ import os
 import json,csv
 from typing import Any
 
-SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Path to the src directory
-CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')  # Full path to the config file
-LOG_FILE_PATH = os.path.join(SRC_DIR, "cpf_log_file.csv")  # Log file path inside src folder
+#SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Path to the src directory
+#CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')  # Full path to the config file
+#LOG_FILE_PATH = os.path.join(SRC_DIR, "cpf_log_file.csv")  # Log file path inside src folder
 DATE_KEYS = ['start_date', 'end_date', 'birth_date']
 DATE_FORMAT = "%Y-%m-%d"
-DATE_DICT = os.path.join(SRC_DIR, 'cpf_date_dict.json')  # Path to the date dictionary file
-DATE_LIST = os.path.join(SRC_DIR, 'cpf_date_list.csv')  # Path to the date list file
+#DATE_DICT = os.path.join(SRC_DIR, 'cpf_date_dict.json')  # Path to the date dictionary file
+#DATE_LIST = os.path.join(SRC_DIR, 'cpf_date_list.csv')  # Path to the date list file
 
 def serialize(obj):
     for key, value in obj.items():

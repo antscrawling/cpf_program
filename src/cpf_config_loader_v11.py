@@ -1,3 +1,4 @@
+from __init__ import SRC_DIR, CONFIG_FILENAME, CONFIG_FILENAME_FOR_USE, DATABASE_NAME
 import json
 from datetime import datetime, date
 import os
@@ -7,10 +8,10 @@ from pprint import pprint
 import re 
 
 
-SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Path to the src directory
-CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')  # Full path to the config file
-CONFIG_FILENAME_FOR_USE = os.path.join(SRC_DIR, 'cpf_config_flat.json')  # Full path to the config file for use
-DATABASE_NAME = os.path.join(SRC_DIR, 'cpf_simulation.db')  # Full path to the database file
+#SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Path to the src directory
+#CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')  # Full path to the config file
+#CONFIG_FILENAME_FOR_USE = os.path.join(SRC_DIR, 'cpf_config_flat.json')  # Full path to the config file for use
+#DATABASE_NAME = os.path.join(SRC_DIR, 'cpf_simulation.db')  # Full path to the database file
 
 DATE_FORMAT = "%Y-%m-%d"    
 PATTERN  = r"\b\d{4}-\d{2}-\d{2}\b"

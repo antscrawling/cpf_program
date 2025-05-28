@@ -1,3 +1,4 @@
+from __init__ import SRC_DIR, CONFIG_FILENAME, CONFIG_FILENAME_FOR_USE, DATABASE_NAME, LOG_FILE_PATH
 import atexit
 from datetime import datetime
 import csv
@@ -11,9 +12,9 @@ from datetime import date, datetime
 from itertools import count
 
 # Dynamically determine the src directory
-SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Path to the src directory
-CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')  # Full path to the config file
-LOG_FILE_PATH = os.path.join(SRC_DIR, "cpf_log_file.csv")  # Log file path inside src folder
+#SRC_DIR = os.path.dirname(os.path.abspath(__file__))  # Path to the src directory
+#CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')  # Full path to the config file
+#LOG_FILE_PATH = os.path.join(SRC_DIR, "cpf_log_file.csv")  # Log file path inside src folder
 DATE_KEYS = ['startdate', 'enddate', 'birthdate']
 DATE_FORMAT = "%Y-%m-%d"
 

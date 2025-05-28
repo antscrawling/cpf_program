@@ -8,6 +8,8 @@ help:
 	@echo "  docker-run    Run the Docker container"
 	@echo "  clean         Remove Python cache files and .venv"
 
+
+
 install: .venv
 	. .venv/bin/activate && pip install --upgrade pip && pip install -r requirements.txt
 
@@ -17,8 +19,26 @@ install-dev: .venv
 
 .venv:
 	@echo "Creating virtual environment in .venv..."
-	python3 -m venv .venv
-	@echo "Virtual environment created in .venv. Activate it using 'source .venv/bin/activate'."
+	python -m venv .venv
+	@echo "Virtual environment created in .venv. Activate it using 'source .venv/bin/activate' (Linux/Mac) or '.venv\Scripts\activate' (Windows)."
+
+reinstall:
+	@echo "Deleting existing virtual environment..."
+	rm -rf .venv
+	@echo "Recreating virtual environment..."
+	python -m venv .venv
+	@echo "Installing dependencies..."
+ifeq ($(OS),Windows_NT)
+	.venv\Scripts\activate && pip install --upgrade pip && pip install -r src/requirements.txt
+else
+	. .venv/bin/activate && pip install --upgrade pip && pip install -r src/requirements.txt
+endif
+	@echo "Reinstallation complete."
+
+run:
+	@echo "Running the CPF program..."
+	@echo "Activate the virtual environment first using 'source .venv/bin/activate' (Linux/Mac) or '.venv\Scripts\activate' (Windows)."
+	. .venv/bin/activate && streamlit run src/main.py --server.headless true
 
 docker-build:
 	docker build -t antscrawlingjay/cpf-program .

@@ -1,5 +1,0 @@
-date,transaction_reference,age,account,old_balance,new_balance,amount,type,message
-2025-05-01,100000001,50,oa,0.0,167892.11,167892.11,inflow,oa-Initial Balance of oa-167892.11
-2025-05-01,100000002,50,sa,0.0,253163.35,253163.35,inflow,sa-Initial Balance of sa-253163.35
-2025-05-01,100000003,50,ma,0.0,72952.37,72952.37,inflow,ma-Initial Balance of ma-72952.37
-2025-05-01,100000004,50,loan,0.0,251101.0,251101.0,inflow,loan-Initial Balance of loan-251101.00
