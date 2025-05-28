@@ -132,7 +132,8 @@ def show_forgot_password(users, username):
             if st.button("Quit", key="reset_quit"):
                 st.session_state["reset_mode"] = False
                 st.session_state["reset_verified"] = False
-                st.rerun()
+                st.write("The application has been stopped. You can now close this tab.")
+                st.stop()  # Halt the Streamlit script
 
 def show_login(myusers):
     st.header("🔒 Login")
@@ -184,7 +185,8 @@ def show_login(myusers):
             st.session_state["reset_mode"] = False
             st.session_state["reset_verified"] = False
             st.session_state["username"] = ""  # Clear the username
-            st.rerun()  # Refresh the app
+            st.write("The application has been stopped. You can now close this tab.")
+            st.stop()  # Halt the Streamlit script
             
 def show_main_page():
     st.title("🧾 CPF Simulation Configurator")
@@ -275,7 +277,8 @@ def show_main_page():
             st.session_state["register_mode"] = False
             st.session_state["reset_mode"] = False
             st.session_state["reset_verified"] = False
-            st.rerun()
+            #st.rerun()
+            os._exit(0)  # Force exit the application
 
 def main():
     users = load_users()

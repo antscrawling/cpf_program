@@ -3,7 +3,7 @@ name = "cpf-program"
 version = "1.0.0"
 description = "CPF Program Central Provident Fund"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
     "setuptools>=80.7.1",
 ]
