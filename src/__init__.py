@@ -5,8 +5,8 @@ import os
 SRC_DIR = Path(__file__).resolve().parent
 
 # Configuration file paths
-CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')
-FLAT_FILENAME = os.path.join(SRC_DIR, 'test_config1.json')
+CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config_flat.json')
+FLAT_FILENAME = os.path.join(SRC_DIR, 'cpf_config_flatjson')
 CONFIG_FILENAME_FOR_USE = CONFIG_FILENAME
 USER_FILE = os.path.join(SRC_DIR, "users.json")
 LOG_FILE_PATH = os.path.join(SRC_DIR, 'cpf_log_file.csv')

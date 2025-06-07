@@ -17,8 +17,8 @@ st.set_page_config(page_title="CPF Simulation Setup", layout="wide")
 SRC_DIR = Path(__file__).resolve().parent
 
 # Configuration file paths
-CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config.json')
-FLAT_FILENAME = os.path.join(SRC_DIR, 'test_config1.json')
+CONFIG_FILENAME = os.path.join(SRC_DIR, 'cpf_config_flat.json')
+FLAT_FILENAME = os.path.join(SRC_DIR, 'cpf_config_flat.json')
 CONFIG_FILENAME_FOR_USE = CONFIG_FILENAME
 USER_FILE = os.path.join(SRC_DIR, "users.json")
 LOG_FILE_PATH = os.path.join(SRC_DIR, 'cpf_log_file.csv')
@@ -213,35 +213,54 @@ def show_main_page():
     st.subheader("🔧 Edit Parameters")
     config = CPFConfig(CONFIG_FILENAME)
     updated_config = {}
-    for key, value in config.data.items():
-        if isinstance(value, (int, float)):
-            updated_value = st.number_input(key, value=value)
-        elif isinstance(value, str):
-            updated_value = st.text_input(key, value=value)
-        else:
-            updated_value = st.text_area(key, value=json.dumps(value))
-        updated_config[key] = updated_value
+    
+    # Get all attributes from the config object
+    for attr in dir(config):
+        if not attr.startswith("__") and not callable(getattr(config, attr)):
+            value = getattr(config, attr)
+            if isinstance(value, (int, float)):
+                updated_value = st.number_input(attr, value=value)
+            elif isinstance(value, str):
+                updated_value = st.text_input(attr, value=value)
+            else:
+                updated_value = st.text_area(attr, value=json.dumps(value, default=str))
+            updated_config[attr] = updated_value
 
     col1, col2, col3, col4, col5, col6 = st.columns(6)
     with col1:
         if st.button("💾 Save",key="save_configuration"):
-            config.data = updated_config
-            with open(CONFIG_FILENAME, "w") as f:
-                json.dump(config.data, f, indent=4)
+            # Save the updated configuration
+            with open(CONFIG_FILENAME_FOR_USE, "w") as f:
+                json.dump(updated_config, f, indent=4, default=str)
             st.success("Configuration saved successfully!")
     with col2:
         if st.button("Run Simulation",key="run_simulation"):
             try:
                 python_executable = sys.executable
                 result = subprocess.run(
-                    [python_executable, os.path.join(PATH, "cpf_run_simulation_v9.py")],
+                    [python_executable, os.path.join(SRC_DIR, "cpf_run_simulation_v9.py")],
                     check=True, capture_output=True, text=True
                 )
                 output_path = os.path.join(SRC_DIR, "simulation_output.html")
+                
+                # Write the output file
                 with open(output_path, "w") as f:
                     f.write(f"<pre>{result.stdout}</pre>")
-                webbrowser.open_new_tab(f"file://{output_path}")
-                st.success("Simulation completed! The output will open in a new tab.")
+                
+                # Ensure the file exists before trying to open it
+                if os.path.exists(output_path):
+                    # Convert path to URL format
+                    file_url = f"file://{os.path.abspath(output_path)}"
+                    try:
+                        # Try to open in default browser
+                        webbrowser.open_new_tab(file_url)
+                        st.success("Simulation completed! The output will open in a new tab.")
+                    except Exception as browser_error:
+                        st.warning(f"Could not open browser automatically. You can manually open the file at: {output_path}")
+                        st.error(f"Browser error: {str(browser_error)}")
+                else:
+                    st.error(f"Output file was not created at: {output_path}")
+                    
             except subprocess.CalledProcessError as e:
                 st.error("Simulation failed:")
                 st.code(e.stderr or str(e))
@@ -250,7 +269,7 @@ def show_main_page():
             try:
                 python_executable = sys.executable
                 result = subprocess.run(
-                    [python_executable, os.path.join(PATH, "cpf_build_reports_v1.py")],
+                    [python_executable, os.path.join(SRC_DIR, "cpf_build_reports_v1.py")],
                     check=True, capture_output=True, text=True
                 )
                 st.success("CSV report generated successfully!")
@@ -263,7 +282,7 @@ def show_main_page():
             try:
                 python_executable = sys.executable
                 result = subprocess.run(
-                    [python_executable, os.path.join(PATH, "cpf_analysis_v1.py")],
+                    [python_executable, os.path.join(SRC_DIR, "cpf_analysis_v1.py")],
                     check=True, capture_output=True, text=True
                 )
                 st.success("Analysis completed successfully!")
