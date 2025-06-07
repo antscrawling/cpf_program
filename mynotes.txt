@@ -118,3 +118,29 @@ git commands
 3.  git remote add origin https://github.com/antscrawling/cpf_program.git
 4.  git add . 
     git commit -m "Initial commit - reinitialized from scratch" 
+
+
+
+step 1
+make docker-build
+step 2
+docker login
+make docker-push
+
+step 3 
+# Using docker run
+docker pull antscrawlingjay/cpf-program:latest
+docker run -d --name cpf-program -p 8501:8501 antscrawlingjay/cpf-program:latest
+
+# Or using docker-compose
+docker-compose up -d
+
+Key improvements in this setup:
+Uses a non-root user for better security
+Includes health checks
+Better caching for faster builds
+Proper environment variables
+Docker Compose for easier deployment
+Production-ready configuration
+Proper cleanup of system packages
+Headless mode enabled by default

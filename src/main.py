@@ -226,15 +226,76 @@ def show_main_page():
                 updated_value = st.text_area(attr, value=json.dumps(value, default=str))
             updated_config[attr] = updated_value
 
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
-    with col1:
-        if st.button("💾 Save",key="save_configuration"):
-            # Save the updated configuration
-            with open(CONFIG_FILENAME_FOR_USE, "w") as f:
-                json.dump(updated_config, f, indent=4, default=str)
-            st.success("Configuration saved successfully!")
-    with col2:
-        if st.button("Run Simulation",key="run_simulation"):
+    # Create a container for the buttons
+    button_container = st.container()
+    with button_container:
+        col1, col2, col3, col4, col5, col6 = st.columns(6)
+        with col1:
+            if st.button("💾 Save",key="save_configuration"):
+                with open(CONFIG_FILENAME_FOR_USE, "w") as f:
+                    json.dump(updated_config, f, indent=4, default=str)
+                st.success("Configuration saved successfully!")
+        with col2:
+            run_sim = st.button("Run Simulation",key="run_simulation")
+        with col3:
+            if st.button("🚀 Run CSV Report",key="run_csv"):
+                try:
+                    python_executable = sys.executable
+                    result = subprocess.run(
+                        [python_executable, os.path.join(SRC_DIR, "cpf_build_reports_v1.py")],
+                        check=True, capture_output=True, text=True
+                    )
+                    st.success("CSV report generated successfully!")
+                    st.code(result.stdout)
+                except subprocess.CalledProcessError as e:
+                    st.error("CSV report generation failed:")
+                    st.code(e.stderr or str(e))
+        with col4:
+            if st.button("📊 Run Analysis",key="run_analysis"):
+                try:
+                    python_executable = sys.executable
+                    result = subprocess.run(
+                        [python_executable, os.path.join(SRC_DIR, "cpf_analysis_v1.py")],
+                        check=True, capture_output=True, text=True
+                    )
+                    st.success("Analysis completed successfully!")
+                    st.code(result.stdout)
+                except subprocess.CalledProcessError as e:
+                    st.error("Analysis failed:")
+                    st.code(e.stderr or str(e))
+        with col5:
+            import pandas as pd
+            import dicttoxml
+            report_file_path = os.path.join(SRC_DIR, "cpf_report.csv")
+            try:
+                report_df = pd.read_csv(report_file_path)
+                report_dict = report_df.to_dict(orient="records")
+                xml_data = dicttoxml.dicttoxml(report_dict, custom_root="CPFReport", attr_type=False)
+                st.download_button(key="download_xml",
+                    label="Download XML",
+                    data=xml_data,
+                    file_name="cpf_report.xml",
+                    mime="application/xml"
+                )
+            except FileNotFoundError:
+                st.error(f"File not found: {report_file_path}")
+            except Exception as e:
+                st.error(f"An error occurred while generating the XML: {e}")
+        with col6:
+            if st.button("🛑 EXIT",key="exit_button"):
+                st.write("Exiting the application...")
+                st.session_state["logged_in"] = False
+                st.session_state["Main Page"] = False
+                st.session_state["register_mode"] = False
+                st.session_state["reset_mode"] = False
+                st.session_state["reset_verified"] = False
+                os._exit(0)
+
+    # Create a separate container for simulation results
+    if run_sim:
+        with st.container():
+            st.markdown("---")  # Add a separator
+            st.subheader("Simulation Results")
             try:
                 python_executable = sys.executable
                 result = subprocess.run(
@@ -243,81 +304,36 @@ def show_main_page():
                 )
                 output_path = os.path.join(SRC_DIR, "simulation_output.html")
                 
-                # Write the output file
+                # Write the output file with proper HTML structure
                 with open(output_path, "w") as f:
-                    f.write(f"<pre>{result.stdout}</pre>")
+                    f.write(f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Simulation Results</title>
+                        <style>
+                            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                            pre {{ white-space: pre-wrap; word-wrap: break-word; }}
+                        </style>
+                    </head>
+                    <body>
+                        <h1>Simulation Results</h1>
+                        <pre>{result.stdout}</pre>
+                    </body>
+                    </html>
+                    """)
                 
-                # Ensure the file exists before trying to open it
                 if os.path.exists(output_path):
-                    # Convert path to URL format
-                    file_url = f"file://{os.path.abspath(output_path)}"
-                    try:
-                        # Try to open in default browser
-                        webbrowser.open_new_tab(file_url)
-                        st.success("Simulation completed! The output will open in a new tab.")
-                    except Exception as browser_error:
-                        st.warning(f"Could not open browser automatically. You can manually open the file at: {output_path}")
-                        st.error(f"Browser error: {str(browser_error)}")
+                    st.success("Simulation completed successfully!")
+                    with open(output_path, 'r') as f:
+                        html_content = f.read()
+                    st.components.v1.html(html_content, height=600, scrolling=True)
                 else:
                     st.error(f"Output file was not created at: {output_path}")
                     
             except subprocess.CalledProcessError as e:
                 st.error("Simulation failed:")
                 st.code(e.stderr or str(e))
-    with col3:
-        if st.button("🚀 Run CSV Report",key="run_csv"):
-            try:
-                python_executable = sys.executable
-                result = subprocess.run(
-                    [python_executable, os.path.join(SRC_DIR, "cpf_build_reports_v1.py")],
-                    check=True, capture_output=True, text=True
-                )
-                st.success("CSV report generated successfully!")
-                st.code(result.stdout)
-            except subprocess.CalledProcessError as e:
-                st.error("CSV report generation failed:")
-                st.code(e.stderr or str(e))
-    with col4:
-        if st.button("📊 Run Analysis",key="run_analysis"):
-            try:
-                python_executable = sys.executable
-                result = subprocess.run(
-                    [python_executable, os.path.join(SRC_DIR, "cpf_analysis_v1.py")],
-                    check=True, capture_output=True, text=True
-                )
-                st.success("Analysis completed successfully!")
-                st.code(result.stdout)
-            except subprocess.CalledProcessError as e:
-                st.error("Analysis failed:")
-                st.code(e.stderr or str(e))
-    with col5:
-        import pandas as pd
-        import dicttoxml
-        report_file_path = os.path.join(SRC_DIR, "cpf_report.csv")
-        try:
-            report_df = pd.read_csv(report_file_path)
-            report_dict = report_df.to_dict(orient="records")
-            xml_data = dicttoxml.dicttoxml(report_dict, custom_root="CPFReport", attr_type=False)
-            st.download_button(key="download_xml",
-                label="Download XML",
-                data=xml_data,
-                file_name="cpf_report.xml",
-                mime="application/xml"
-            )
-        except FileNotFoundError:
-            st.error(f"File not found: {report_file_path}")
-        except Exception as e:
-            st.error(f"An error occurred while generating the XML: {e}")
-    with col6:
-        if st.button("🛑 EXIT",key="exit_button"):
-            st.write("Exiting the application...")
-            st.session_state["logged_in"] = False
-            st.session_state["Main Page"] = False
-            st.session_state["register_mode"] = False
-            st.session_state["reset_mode"] = False
-            st.session_state["reset_verified"] = False
-            #st.rerun()
-            os._exit(0)  # Force exit the application
 
 def main():
     users = load_users()
