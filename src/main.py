@@ -330,12 +330,12 @@ def main():
         ("reset_mode", False),
         ("reset_verified", False),
         ("Main Page", False),
-        ("username", ""),  # Add username to session state
+        ("username", ""),  # Add userna#me to session state
     ]:
         if key not in st.session_state:
             st.session_state[key] = val
 
-    # Main logic flow
+    # Main logic flow 
     if st.session_state["logged_in"] and st.session_state["Main Page"]:
         show_main_page()
     elif st.session_state["register_mode"]:
