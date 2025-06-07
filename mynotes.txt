@@ -105,8 +105,8 @@ cpf_reconfigure_date_v2.py
 docker build -t antscrawlingjay/cpf-program .
 docker run -p 8501:8501 antscrawlingjay/cpf-program
 
-streamlit run main.py --server.headless true
-
+==streamlit run main.py --server.headless true
+cd src && streamlit run main.py --server.headless true
 
 uv create -n newcpf_program -f environment.yml
 
