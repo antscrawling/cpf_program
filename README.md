@@ -6,7 +6,7 @@ New CPF program that calculates Singapore retirement funds.
 
 1. clone the repository
 - cd <your dest folder>
-- git clone https://github.com/antscrawling/newcpf_program.git
+- git clone https://github.com/antscrawling/cpf_program.git
 
 
 ### Windows
@@ -17,7 +17,7 @@ New CPF program that calculates Singapore retirement funds.
 3. **Install Required Libraries**:
    - Open Command Prompt and navigate to the project directory:
      ```cmd
-     cd path\to\newcpf_program
+     cd path\to\cpf_program
      ```
    - Install the required Python libraries:
      ```cmd
@@ -27,7 +27,7 @@ New CPF program that calculates Singapore retirement funds.
 4. **Run the Program**:
    - Run the Streamlit app:
      ```cmd
-     streamlit run src/main_v4.py
+     cd src && streamlit run main.py --server.headless true
      ```
 
 ---
@@ -35,7 +35,7 @@ New CPF program that calculates Singapore retirement funds.
 ### Mac
 1. clone the repository
 - cd <your dest folder>
-- git clone https://github.com/antscrawling/newcpf_program.git
+- git clone https://github.com/antscrawling/cpf_program.git
 
 2. **Install Python**:
    - macOS comes with Python pre-installed. However, it is recommended to install the latest version using [Homebrew](https://brew.sh/):
@@ -56,7 +56,7 @@ New CPF program that calculates Singapore retirement funds.
 4. **Run the Program**:
    - Run the Streamlit app:
      ```bash
-     streamlit run src/main_v4.py
+    cd src && streamlit run main.py --server.headless true
      ```
 
 ---
@@ -64,7 +64,7 @@ New CPF program that calculates Singapore retirement funds.
 ### Docker
 1. clone the repository
 - cd <your dest folder>
-- git clone https://github.com/antscrawling/newcpf_program.git
+- git clone https://github.com/antscrawling/cpf_program.git
 
 2. **Install Docker**:
    - Download and install Docker from the [official Docker website](https://www.docker.com/).
@@ -72,17 +72,18 @@ New CPF program that calculates Singapore retirement funds.
 3. **Build the Docker Image**:
    - Open a terminal or command prompt and navigate to the project directory:
      ```bash
-     cd /path/to/newcpf_program
+     cd /path/to/cpf_program
      ```
    - Build the Docker image:
      ```bash
-     docker build -t newcpf_program .
+     docker build -t <username>/cpf-program .t newcpf_program .
      ```
 
 4. **Run the Docker Container**:
    - Run the container and expose the Streamlit app on port 8501:
      ```bash
-     docker run -p 8501:8501 newcpf_program
+     docker run -p 8501:8501 antscrawlingjay/cpf-program
+
      ```
 
 5. **Access the Application**:
